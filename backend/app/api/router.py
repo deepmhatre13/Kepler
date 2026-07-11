@@ -10,3 +10,8 @@ api_router.include_router(agents.router,     prefix="/agents",     tags=["Agents
 api_router.include_router(dashboard.router,  prefix="/dashboard",  tags=["Dashboard"])
 api_router.include_router(catalog.router,    prefix="/catalog",    tags=["Orbital Catalog"])
 api_router.include_router(weather.router,    prefix="/weather",    tags=["Space Weather"])
+
+
+@api_router.get("/health", tags=["Health"])
+def api_health():
+    return {"success": True, "status": "healthy", "service": "KAPLER AI"}
