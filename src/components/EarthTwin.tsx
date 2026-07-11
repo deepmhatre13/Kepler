@@ -106,7 +106,7 @@ function getOutlineWidth(classification: string): number {
 }
 
 
-const API_BASE = 'http:
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1';
 
 async function fetchAllCatalogObjects(): Promise<CatalogObject[]> {
   const res = await fetch(`${API_BASE}/catalog/objects?size=500&page=1`);
@@ -287,7 +287,9 @@ export const EarthTwin: React.FC = () => {
       viewer.scene.globe.enableLighting = false;
       viewer.scene.backgroundColor = Cesium.Color.fromCssColorString('#050710');
       viewer.scene.fog.enabled = false;
-      viewer.scene.skyAtmosphere.show = true;
+      if (viewer.scene.skyAtmosphere) {
+        viewer.scene.skyAtmosphere.show = true;
+      }
 
       
       viewer.camera.setView({
@@ -383,7 +385,7 @@ export const EarthTwin: React.FC = () => {
       {useFallback && (
         <div className="absolute inset-0 z-0 flex items-center justify-center bg-[radial-gradient(circle_at_center,rgba(5,7,10,0.8)_0%,#000000_100%)]">
           <img
-            src="https:
+            src="https://images.unsplash.com/photo-1614730321146-b6fa6a46bcb4?auto=format&fit=crop&w=1200&q=80"
             alt="3D Earth Twin"
             className="w-full h-full object-cover opacity-60 brightness-75 contrast-125 select-none"
           />
