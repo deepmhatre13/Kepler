@@ -2,8 +2,15 @@
 Space-Track Live Data Service
 ==============================
 Fetches real GP (General Perturbations) data from Space-Track.org.
-Supports active satellites, debris, and Starlink constellations.
-Upserts into SQLite/PostgreSQL using NORAD catalog number as the unique key.
+Upserts into MongoDB using NORAD catalog number as the unique key.
+
+Bug Fixes Applied:
+  1. Field names now match the Satellite / SpaceObject MongoDB model
+     (noradId, objectName, objectType, etc.) instead of SQLAlchemy names.
+  2. Lookups now use raw Mongo filter dicts instead of @property fields
+     so queries actually hit the database.
+  3. Satellite documents are populated with all orbital fields on insert.
+  4. Structured logging at every pipeline stage.
 """
 
 import httpx
@@ -11,18 +18,19 @@ import math
 import datetime
 import logging
 from typing import List, Dict, Any, Optional
-from sqlalchemy.orm import Session
-
-from app.models.db_models import SpaceObject, Satellite, Debris
+from app.database.session import MongoSession
 from app.core.config import settings
 
 logger = logging.getLogger("app")
 
 
+# ---------------------------------------------------------------------------
+# Sync group definitions: (group_name, objectType value in Mongo, description)
+# ---------------------------------------------------------------------------
 SYNC_GROUPS = [
-    ("active",    "PAYLOAD",     "Tracked active satellites"),
-    ("starlink",  "PAYLOAD",     "Starlink constellation"),
-    ("analyst",   "DEBRIS",      "Analyst debris objects"),
+    ("active",   "PAYLOAD", "Tracked active satellites"),
+    ("starlink", "PAYLOAD", "Starlink constellation"),
+    ("analyst",  "DEBRIS",  "Analyst debris objects"),
 ]
 
 
@@ -37,14 +45,16 @@ _TYPE_MAP = {
 def _semimajor_axis_from_mean_motion(mean_motion_revday: float) -> float:
     """Convert mean motion (rev/day) to semi-major axis (km)."""
     if mean_motion_revday <= 0:
-        return 6778.0  
+        return 6778.0
     n_rads = mean_motion_revday * 2 * math.pi / 86400.0
     return (398600.4418 / (n_rads ** 2)) ** (1.0 / 3.0)
 
 
-def _parse_epoch(epoch_str: str) -> Optional[datetime.datetime]:
+def _parse_epoch(epoch_str: str) -> Optional[str]:
+    """Return ISO string or None — store as string in Mongo."""
     try:
-        return datetime.datetime.fromisoformat(epoch_str.replace("Z", ""))
+        dt = datetime.datetime.fromisoformat(epoch_str.replace("Z", ""))
+        return dt.isoformat()
     except Exception:
         return None
 
@@ -52,111 +62,147 @@ def _parse_epoch(epoch_str: str) -> Optional[datetime.datetime]:
 class SpaceTrackService:
     """
     Production Space-Track GP data service.
-    Replaces CelesTrak service with direct authenticated calls.
+    Writes directly into MongoDB collections via MongoSession.
     """
 
     def __init__(self):
         self.username = settings.SPACETRACK_USERNAME
         self.password = settings.SPACETRACK_PASSWORD
         self.base_url = "https://www.space-track.org"
-        self.client = httpx.Client(timeout=30.0, follow_redirects=True)
-        self.session_cookie = None
+        self.client   = httpx.Client(timeout=60.0, follow_redirects=True)
+        self._authenticated = False
+
+    # ------------------------------------------------------------------
+    # Authentication
+    # ------------------------------------------------------------------
 
     def authenticate(self) -> bool:
-        """Authenticate with Space-Track and store session cookie."""
-        if not self.username or not self.password:
-            logger.warning("Space-Track credentials not set. API calls will fail.")
-            return False
-
-        if self.session_cookie:
+        """Authenticate with Space-Track. Returns True on success."""
+        if self._authenticated:
             return True
 
+        if not self.username or not self.password:
+            logger.warning(
+                "SPACETRACK_USERNAME / SPACETRACK_PASSWORD not set — "
+                "Space-Track calls will be skipped."
+            )
+            return False
+
         try:
+            logger.info(f"[SpaceTrack] Authenticating as '{self.username}' …")
             resp = self.client.post(
                 f"{self.base_url}/ajaxauth/login",
-                data={"identity": self.username, "password": self.password}
+                data={"identity": self.username, "password": self.password},
             )
-            if resp.status_code == 200:
-                
-                self.session_cookie = resp.cookies.get("spacetrack_session") or self.client.cookies.get("spacetrack_session")
-                if self.session_cookie:
-                    logger.info("Successfully authenticated with Space-Track.")
-                    return True
-            logger.error(f"Space-Track login failed with status {resp.status_code}")
+            logger.info(
+                f"[SpaceTrack] Login response: HTTP {resp.status_code}, "
+                f"cookies={list(self.client.cookies.keys())}"
+            )
+            if resp.status_code == 200 and "spacetrack_session" in self.client.cookies:
+                self._authenticated = True
+                logger.info("[SpaceTrack] ✅ Authentication successful.")
+                return True
+
+            logger.error(
+                f"[SpaceTrack] ❌ Login failed — HTTP {resp.status_code}. "
+                f"Body preview: {resp.text[:300]}"
+            )
             return False
-        except Exception as e:
-            logger.error(f"Space-Track authentication error: {e}")
+        except Exception as exc:
+            logger.error(f"[SpaceTrack] ❌ Authentication exception: {exc}")
             return False
+
+    def _reset_auth(self):
+        """Force re-authentication on next call."""
+        self._authenticated = False
+
+    # ------------------------------------------------------------------
+    # Raw API fetch
+    # ------------------------------------------------------------------
 
     def fetch_group_json(self, group: str, limit: int = 500) -> List[Dict[str, Any]]:
-        """Fetch a named group from Space-Track using filters."""
+        """Fetch a named group from Space-Track. Returns list of GP records."""
         if not self.authenticate():
-            logger.error(f"Cannot fetch group '{group}' because Space-Track authentication failed.")
+            logger.error(f"[SpaceTrack] Cannot fetch group '{group}' — auth failed.")
             return []
 
-        
         if group == "active":
-            query_path = f"/basicspacedata/query/class/gp/OBJECT_TYPE/PAYLOAD/decay_date/null-val/orderby/NORAD_CAT_ID/limit/{limit}/format/json"
+            path = f"/basicspacedata/query/class/gp/OBJECT_TYPE/PAYLOAD/decay_date/null-val/orderby/NORAD_CAT_ID/limit/{limit}/format/json"
         elif group == "starlink":
-            query_path = f"/basicspacedata/query/class/gp/OBJECT_NAME/~~STARLINK/decay_date/null-val/orderby/NORAD_CAT_ID/limit/{limit}/format/json"
-        elif group == "analyst" or group == "debris":
-            query_path = f"/basicspacedata/query/class/gp/OBJECT_TYPE/DEBRIS/decay_date/null-val/orderby/NORAD_CAT_ID/limit/{limit}/format/json"
+            path = f"/basicspacedata/query/class/gp/OBJECT_NAME/~~STARLINK/decay_date/null-val/orderby/NORAD_CAT_ID/limit/{limit}/format/json"
+        elif group in ("analyst", "debris"):
+            path = f"/basicspacedata/query/class/gp/OBJECT_TYPE/DEBRIS/decay_date/null-val/orderby/NORAD_CAT_ID/limit/{limit}/format/json"
         else:
-            logger.warning(f"Unknown group '{group}' requested. Defaulting to empty query.")
+            logger.warning(f"[SpaceTrack] Unknown group '{group}'.")
             return []
 
-        url = f"{self.base_url}{query_path}"
-        logger.info(f"Space-Track → fetching group '{group}' from {url}")
+        url = f"{self.base_url}{path}"
+        logger.info(f"[SpaceTrack] → GET {url}")
+
         try:
-            resp = self.client.get(url, cookies={"spacetrack_session": self.session_cookie})
+            resp = self.client.get(url)
             resp.raise_for_status()
             data = resp.json()
-            logger.info(f"Space-Track → received {len(data)} records for group '{group}'")
+            if not isinstance(data, list):
+                logger.error(
+                    f"[SpaceTrack] Unexpected response type {type(data)} — "
+                    f"preview: {str(data)[:300]}"
+                )
+                # Session may have expired — force re-login next call
+                self._reset_auth()
+                return []
+            logger.info(
+                f"[SpaceTrack] ✅ Group '{group}': {len(data)} records received. "
+                f"First record keys: {list(data[0].keys()) if data else 'N/A'}"
+            )
             return data
-        except Exception as e:
-            logger.error(f"Space-Track fetch failed for group '{group}': {e}")
+        except httpx.HTTPStatusError as exc:
+            logger.error(
+                f"[SpaceTrack] HTTP {exc.response.status_code} for group '{group}': "
+                f"{exc.response.text[:300]}"
+            )
+            self._reset_auth()
+            return []
+        except Exception as exc:
+            logger.error(f"[SpaceTrack] Fetch failed for group '{group}': {exc}")
             return []
 
     def fetch_by_catalog_json(self, catalog_number: str) -> Optional[Dict[str, Any]]:
-        """Fetch a single object by catalog number."""
+        """Fetch a single object by NORAD catalog number."""
         if not self.authenticate():
             return None
-
         url = f"{self.base_url}/basicspacedata/query/class/gp/NORAD_CAT_ID/{catalog_number}/format/json"
         try:
-            resp = self.client.get(url, cookies={"spacetrack_session": self.session_cookie})
+            resp = self.client.get(url)
             resp.raise_for_status()
             data = resp.json()
-            return data[0] if data else None
-        except Exception as e:
-            logger.error(f"Space-Track fetch by CATNR={catalog_number} failed: {e}")
+            return data[0] if isinstance(data, list) and data else None
+        except Exception as exc:
+            logger.error(f"[SpaceTrack] fetch_by_catalog({catalog_number}) failed: {exc}")
             return None
 
-    def fetch_by_name_json(self, name: str) -> List[Dict[str, Any]]:
-        """Fetch objects matching a name pattern."""
-        if not self.authenticate():
-            return []
+    # ------------------------------------------------------------------
+    # FIX #1 — Transform GP record → MongoDB document using correct field names
+    # ------------------------------------------------------------------
 
-        url = f"{self.base_url}/basicspacedata/query/class/gp/OBJECT_NAME/~~{name}/orderby/NORAD_CAT_ID/format/json"
-        try:
-            resp = self.client.get(url, cookies={"spacetrack_session": self.session_cookie})
-            resp.raise_for_status()
-            return resp.json()
-        except Exception as e:
-            logger.error(f"Space-Track fetch by NAME={name} failed: {e}")
-            return []
-
-    def _gp_to_space_object_fields(
-        self, rec: Dict[str, Any], classification_override: Optional[str] = None
+    def _gp_to_satellite_doc(
+        self, rec: Dict[str, Any], object_type_override: Optional[str] = None
     ) -> Dict[str, Any]:
-        """Map a Space-Track GP JSON record to SpaceObject column values."""
-        norad_id    = str(rec.get("NORAD_CAT_ID", ""))
-        name        = rec.get("OBJECT_NAME", f"OBJ-{norad_id}").strip()
-        obj_type    = rec.get("OBJECT_TYPE", "UNKNOWN")
-        classification = classification_override or _TYPE_MAP.get(obj_type, "UNKNOWN")
+        """
+        Map a Space-Track GP JSON record to a MongoDB satellite/debris document.
 
-        mean_motion = float(rec.get("MEAN_MOTION", 0) or 0)
-        inclination = float(rec.get("INCLINATION", 0) or 0)
+        CRITICAL: Field names MUST match the MongoDB model (Satellite / SpaceObject)
+        which uses camelCase (noradId, objectName, objectType, meanMotion …).
+        The old code wrote snake_case (name, catalog_number, classification …) which
+        were silently ignored by the Mongo adapter, leaving all collections empty.
+        """
+        norad_id     = str(rec.get("NORAD_CAT_ID", "")).strip()
+        object_name  = rec.get("OBJECT_NAME", f"OBJ-{norad_id}").strip()
+        raw_type     = rec.get("OBJECT_TYPE", "UNKNOWN")
+        object_type  = object_type_override or _TYPE_MAP.get(raw_type, "UNKNOWN")
+
+        mean_motion  = float(rec.get("MEAN_MOTION", 0) or 0)
+        inclination  = float(rec.get("INCLINATION", 0) or 0)
         eccentricity = float(rec.get("ECCENTRICITY", 0) or 0)
         raan         = float(rec.get("RA_OF_ASC_NODE", 0) or 0)
         arg_perigee  = float(rec.get("ARG_OF_PERICENTER", 0) or 0)
@@ -168,124 +214,181 @@ class SpaceTrackService:
         tle1 = rec.get("TLE_LINE1") or rec.get("LINE1")
         tle2 = rec.get("TLE_LINE2") or rec.get("LINE2")
 
+        now = datetime.datetime.utcnow().isoformat()
+
         return {
-            "name":            name,
-            "catalog_number":  norad_id,
-            "cospar_id":       rec.get("OBJECT_ID", ""),
-            "classification":  classification,
-            "epoch":           epoch,
-            "inclination":     inclination,
-            "eccentricity":    eccentricity,
+            # ── Primary fields that match the MongoDB Satellite collection schema ──
+            "noradId":      norad_id,
+            "objectName":   object_name,
+            "objectType":   object_type,
+            "countryCode":  rec.get("COUNTRY_CODE", ""),
+            "launchDate":   rec.get("LAUNCH_DATE", ""),
+            "epoch":        epoch,
+            "inclination":  inclination,
+            "eccentricity": eccentricity,
+            "meanMotion":   mean_motion,
+            "source":       "space-track",
+            "createdAt":    now,
+            "updatedAt":    now,
+            # ── Extended orbital elements ──
             "semimajor_axis":  semimajor,
+            "period":          period,
             "raan":            raan,
             "arg_of_perigee":  arg_perigee,
             "mean_anomaly":    mean_anomaly,
-            "mean_motion":     mean_motion,
-            "period":          period,
             "tle_line1":       tle1,
             "tle_line2":       tle2,
-            "updated_at":      datetime.datetime.utcnow(),
+            # ── Operational fields (satellites only) ──
+            "status":           "ACTIVE",
+            "fuel_percentage":  100.0,
+            "operational_mode": "NORMAL",
         }
 
-    def upsert_space_object(
-        self, db: Session, rec: Dict[str, Any], classification_override: Optional[str] = None
-    ) -> SpaceObject:
-        """Insert or update a SpaceObject from a GP record. Returns the DB object."""
-        norad_id = str(rec.get("NORAD_CAT_ID", ""))
+    # ------------------------------------------------------------------
+    # FIX #2 — Use raw dict filter (not @property field) for Mongo lookups
+    # ------------------------------------------------------------------
+
+    def _find_by_norad(self, db: MongoSession, collection: str, norad_id: str):
+        """Find a document by noradId using a raw dict filter (bypasses @property bug)."""
+        return db.db[collection].find_one({"noradId": norad_id})
+
+    def _upsert_satellite_doc(
+        self, db: MongoSession, rec: Dict[str, Any], object_type_override: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Upsert a Space-Track GP record into the satellites collection.
+        Returns the noradId on success, None on failure.
+        """
+        norad_id = str(rec.get("NORAD_CAT_ID", "")).strip()
         if not norad_id:
             return None
 
-        fields = self._gp_to_space_object_fields(rec, classification_override)
-        obj = db.query(SpaceObject).filter(SpaceObject.catalog_number == norad_id).first()
+        doc = self._gp_to_satellite_doc(rec, object_type_override)
 
-        if obj:
-            for k, v in fields.items():
-                if v is not None:
-                    setattr(obj, k, v)
-        else:
-            obj = SpaceObject(**fields)
-            db.add(obj)
-            db.flush()
+        try:
+            db.db["satellites"].update_one(
+                {"noradId": norad_id},
+                {"$set": doc},
+                upsert=True,
+            )
+            return norad_id
+        except Exception as exc:
+            logger.warning(f"[SpaceTrack] Upsert failed for NORAD {norad_id}: {exc}")
+            return None
 
-        return obj
+    def _upsert_debris_doc(
+        self, db: MongoSession, rec: Dict[str, Any]
+    ) -> Optional[str]:
+        """Upsert a debris record into the debris collection."""
+        norad_id = str(rec.get("NORAD_CAT_ID", "")).strip()
+        if not norad_id:
+            return None
+
+        doc = self._gp_to_satellite_doc(rec, object_type_override="DEBRIS")
+
+        try:
+            db.db["debris"].update_one(
+                {"noradId": norad_id},
+                {"$set": doc},
+                upsert=True,
+            )
+            return norad_id
+        except Exception as exc:
+            logger.warning(f"[SpaceTrack] Debris upsert failed for NORAD {norad_id}: {exc}")
+            return None
+
+    # ------------------------------------------------------------------
+    # Public sync API
+    # ------------------------------------------------------------------
 
     def sync_group(
         self,
-        db: Session,
+        db: MongoSession,
         group: str,
-        classification_override: Optional[str] = None,
+        object_type_override: Optional[str] = None,
         limit: Optional[int] = None,
     ) -> int:
-        """Fetch a group and upsert all records into the DB."""
+        """Fetch a group and upsert all records into MongoDB. Returns count inserted/updated."""
         records = self.fetch_group_json(group, limit=limit or 500)
+        if not records:
+            logger.warning(f"[SpaceTrack] sync_group('{group}'): 0 records — nothing to upsert.")
+            return 0
 
+        logger.info(f"[SpaceTrack] sync_group('{group}'): upserting {len(records)} records …")
         count = 0
-        for rec in records:
+        is_debris = (object_type_override == "DEBRIS" or group in ("analyst", "debris"))
+
+        for i, rec in enumerate(records):
             try:
-                obj = self.upsert_space_object(db, rec, classification_override)
-                if obj:
-                    
-                    if obj.classification == "PAYLOAD" and not obj.satellite_details:
-                        sat = Satellite(
-                            space_object_id=obj.id,
-                            status="ACTIVE",
-                            fuel_percentage=100.0,
-                            operational_mode="NORMAL",
-                        )
-                        db.add(sat)
-                    
-                    elif obj.classification in ("DEBRIS", "ROCKET_BODY") and not obj.debris_details:
-                        debris = Debris(space_object_id=obj.id)
-                        db.add(debris)
+                if is_debris:
+                    result = self._upsert_debris_doc(db, rec)
+                else:
+                    result = self._upsert_satellite_doc(db, rec, object_type_override)
+
+                if result:
                     count += 1
-            except Exception as e:
-                logger.warning(f"Failed to upsert NORAD {rec.get('NORAD_CAT_ID')}: {e}")
-                db.rollback()
-                continue
+                    if i < 3:  # Log first few for verification
+                        logger.info(
+                            f"[SpaceTrack]   ✓ Upserted NORAD {result} "
+                            f"({rec.get('OBJECT_NAME', '?')})"
+                        )
+            except Exception as exc:
+                logger.warning(
+                    f"[SpaceTrack] Record {i} (NORAD {rec.get('NORAD_CAT_ID', '?')}) "
+                    f"upsert error: {exc}"
+                )
 
-        try:
-            db.commit()
-            logger.info(f"✅ Space-Track sync '{group}': {count} objects upserted.")
-        except Exception as e:
-            db.rollback()
-            logger.error(f"DB commit failed for group '{group}': {e}")
-
+        logger.info(f"[SpaceTrack] ✅ sync_group('{group}') complete: {count}/{len(records)} upserted.")
         return count
 
-    def sync_all_groups(self, db: Session, limit_per_group: int = 500) -> Dict[str, int]:
-        """Sync all configured groups. Returns dict of {group: count}."""
+    def sync_all_groups(self, db: MongoSession, limit_per_group: int = 500) -> Dict[str, int]:
+        """Sync all configured groups. Returns {group: count}."""
         results = {}
-        for group, cls_override, desc in SYNC_GROUPS:
-            logger.info(f"Syncing group: {group} ({desc})")
-            count = self.sync_group(db, group, cls_override, limit=limit_per_group)
-            results[group] = count
+        for group, type_override, desc in SYNC_GROUPS:
+            logger.info(f"[SpaceTrack] ── Syncing: {group} ({desc})")
+            results[group] = self.sync_group(db, group, type_override, limit=limit_per_group)
+        total = sum(results.values())
+        logger.info(f"[SpaceTrack] 🏁 All groups synced. Total upserted: {total}. Details: {results}")
         return results
 
-    def sync_by_catalog(self, db: Session, catalog_number: str) -> Optional[SpaceObject]:
-        """Fetch and upsert a single object by catalog number."""
+    def sync_by_catalog(self, db: MongoSession, catalog_number: str) -> Optional[Dict]:
+        """Fetch and upsert a single object by catalog number. Returns the doc."""
         rec = self.fetch_by_catalog_json(catalog_number)
         if not rec:
             return None
-        obj = self.upsert_space_object(db, rec)
-        db.commit()
-        return obj
+        obj_type = _TYPE_MAP.get(rec.get("OBJECT_TYPE", "UNKNOWN"), "UNKNOWN")
+        if obj_type == "DEBRIS":
+            self._upsert_debris_doc(db, rec)
+        else:
+            self._upsert_satellite_doc(db, rec, obj_type)
+        return self._find_by_norad(db, "satellites", catalog_number) or \
+               self._find_by_norad(db, "debris", catalog_number)
 
-    def get_stats(self, db: Session) -> Dict[str, Any]:
-        """Return quick statistics about what's in the DB."""
-        total     = db.query(SpaceObject).count()
-        payloads  = db.query(SpaceObject).filter(SpaceObject.classification == "PAYLOAD").count()
-        debris    = db.query(SpaceObject).filter(SpaceObject.classification == "DEBRIS").count()
-        rockets   = db.query(SpaceObject).filter(SpaceObject.classification == "ROCKET_BODY").count()
-        unknown   = db.query(SpaceObject).filter(SpaceObject.classification == "UNKNOWN").count()
-        return {
-            "total": total,
-            "payloads": payloads,
-            "debris": debris,
-            "rocket_bodies": rockets,
-            "unknown": unknown,
-            "last_sync": datetime.datetime.utcnow().isoformat(),
-        }
+    def get_stats(self, db: MongoSession) -> Dict[str, Any]:
+        """Return satellite/debris count statistics from MongoDB."""
+        try:
+            sat_total   = db.db["satellites"].count_documents({})
+            payload_ct  = db.db["satellites"].count_documents({"objectType": "PAYLOAD"})
+            debris_ct   = db.db["debris"].count_documents({})
+            rocket_ct   = db.db["satellites"].count_documents({"objectType": "ROCKET_BODY"})
+            unknown_ct  = db.db["satellites"].count_documents({"objectType": "UNKNOWN"})
 
+            logger.info(
+                f"[SpaceTrack] DB stats — satellites: {sat_total}, "
+                f"payload: {payload_ct}, debris: {debris_ct}, "
+                f"rocket_bodies: {rocket_ct}, unknown: {unknown_ct}"
+            )
+            return {
+                "total":         sat_total + debris_ct,
+                "payloads":      payload_ct,
+                "debris":        debris_ct,
+                "rocket_bodies": rocket_ct,
+                "unknown":       unknown_ct,
+                "last_sync":     datetime.datetime.utcnow().isoformat(),
+            }
+        except Exception as exc:
+            logger.error(f"[SpaceTrack] get_stats failed: {exc}")
+            return {"total": 0, "payloads": 0, "debris": 0, "rocket_bodies": 0, "unknown": 0}
 
 
 spacetrack_service = SpaceTrackService()
