@@ -452,7 +452,7 @@ export const Satellites: React.FC = () => {
             {/* Footer actions */}
             <div className="p-6 border-t border-border-panel bg-surface-container-low grid grid-cols-2 gap-3 mt-auto">
               <button
-                onClick={() => window.open(`https:
+                onClick={() => window.open('https://www.space-track.org', '_blank')}
                 className="py-3 border border-border-panel font-label-caps text-[10px] font-bold hover:bg-surface-variant transition-all cursor-pointer"
               >
                 VIEW ON SPACE-TRACK ↗

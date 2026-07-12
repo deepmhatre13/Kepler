@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, Field
-from typing import Generic, TypeVar, Optional, List, Any
+from typing import Generic, TypeVar, Optional, List, Any, Dict
 from datetime import datetime
 
 T = TypeVar('T')
@@ -15,7 +15,7 @@ class APIResponse(BaseModel, Generic[T]):
     message: str
     data: Optional[T] = None
     pagination: Optional[PaginationSchema] = None
-    metadata: Optional[dict[str, Any]] = None
+    metadata: Optional[Dict[str, Any]] = None
 
 
 class UserLogin(BaseModel):
@@ -154,13 +154,13 @@ class ManeuverResponse(BaseModel):
 
 class SimulationCreate(BaseModel):
     name: str
-    scenario_data: dict[str, Any]
+    scenario_data: Dict[str, Any]
 
 class SimulationResponse(BaseModel):
     id: int
     name: str
-    scenario_data: dict[str, Any]
-    results_data: Optional[dict[str, Any]]
+    scenario_data: Dict[str, Any]
+    results_data: Optional[Dict[str, Any]]
     created_at: datetime
 
     class Config:
@@ -197,7 +197,7 @@ class AgentDecisionResponse(BaseModel):
     agent_name: str
     action_taken: str
     reasoning: str
-    decision_metadata: Optional[dict[str, Any]]
+    decision_metadata: Optional[Dict[str, Any]]
     created_at: datetime
 
     class Config:

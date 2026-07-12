@@ -56,8 +56,7 @@ export function useCollisions(params: Parameters<typeof api.getCollisions>[0] = 
 export function useCollisionEvaluate() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: () =>
-      fetch('http:
+    mutationFn: () => api.triggerCollisionEvaluation(),
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ['collisions'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });

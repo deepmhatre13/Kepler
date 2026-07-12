@@ -91,7 +91,7 @@ export const Dashboard: React.FC = () => {
         {
           title: 'Space Weather',
           value: s.space_weather_index,
-          subValue: s.space_weather_severity,
+          subValue: w?.overall_severity,
           icon: 'wb_sunny',
           border: 'border-b-status-warning/40',
           text: w?.overall_severity === 'EXTREME' ? 'text-status-emergency' : 'text-status-warning',

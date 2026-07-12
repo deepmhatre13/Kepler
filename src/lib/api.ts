@@ -1,9 +1,9 @@
 /**
  * Centralized API Client — Kepler AI
- * All requests go to the FastAPI backend at http:
+ * All requests go to the FastAPI backend at http://localhost:8000/api/v1
  */
 
-const API_BASE = import.meta.env.VITE_API_URL ?? 'http:
+const API_BASE = import.meta.env.VITE_API_URL ?? 'http://localhost:8000/api/v1';
 
 export interface APIResponse<T> {
   success: boolean;
@@ -120,6 +120,9 @@ export const api = {
 
   triggerWeatherSync: () =>
     apiFetch<{ synced_at: string }>('/weather/sync', { method: 'POST' }),
+
+  triggerCollisionEvaluation: () =>
+    apiFetch<any>('/collisions/evaluate', { method: 'POST' }),
 };
 
 
