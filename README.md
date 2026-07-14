@@ -1,4 +1,4 @@
-# 🚀 KAPLER
+# 🚀 KEPLER
 
 ### AI-Powered Orbital Intelligence & Space Debris Collision Avoidance Platform
 
@@ -12,7 +12,7 @@
 
 # 🌍 Overview
 
-Kapler is an AI-powered Orbital Intelligence Platform designed to monitor satellites, track space debris, predict collision risks, and generate autonomous avoidance recommendations.
+Kepler is an AI-powered Orbital Intelligence Platform designed to monitor satellites, track space debris, predict collision risks, and generate autonomous avoidance recommendations.
 
 The project addresses one of the fastest-growing challenges in modern space operations:
 
@@ -20,7 +20,7 @@ The project addresses one of the fastest-growing challenges in modern space oper
 
 As thousands of new satellites enter orbit and space debris continues to accumulate, the probability of orbital collisions rises dramatically.
 
-Kapler provides:
+Kepler provides:
 
 * Real-time orbital visualization
 * Satellite and debris tracking
@@ -73,7 +73,7 @@ Organizations need a platform capable of:
 
 # 💡 Solution
 
-Kapler acts as an AI-assisted Orbital Operations Center.
+Kepler acts as an AI-assisted Orbital Operations Center.
 
 The platform continuously:
 
@@ -462,7 +462,7 @@ MONGODB_URI=your_connection_string
 
 # 📈 Scalability
 
-Kapler is designed for large-scale orbital monitoring.
+Kepler is designed for large-scale orbital monitoring.
 
 Future capabilities:
 
@@ -569,7 +569,8 @@ This repository uses GitHub Actions to automate PR labeling, ensuring consistenc
 - **Mentor labels**: Pre-assigned mentor labels (like mentor:Krish-Khinchi) help route PRs.
 - **Event labels**: The ECSoC26 label ensures PRs are tracked for the event.
 - **Status labels**: Labels like pr-valid, 
-eeds-review, and eady-to-merge track the PR lifecycle.
+eeds-review, and 
+eady-to-merge track the PR lifecycle.
 
 ## Automated Issue Labels
 
