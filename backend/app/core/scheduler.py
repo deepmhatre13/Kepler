@@ -24,8 +24,8 @@ logger = logging.getLogger("app")
 
 async def job_sync_spacetrack():
     """Fetch live GP data from Space-Track and upsert into DB."""
-    from app.database.session import SessionLocal
-    from app.services.spacetrack import spacetrack_service
+    from database.session import SessionLocal
+    from orbital.spacetrack import spacetrack_service
 
     db = SessionLocal()
     try:
@@ -40,8 +40,8 @@ async def job_sync_spacetrack():
 
 async def job_sync_weather():
     """Poll NOAA for space weather Kp index."""
-    from app.database.session import SessionLocal
-    from app.services.weather_service import weather_service
+    from database.session import SessionLocal
+    from services.weather_service import weather_service
 
     db = SessionLocal()
     try:
@@ -56,8 +56,8 @@ async def job_sync_weather():
 
 async def job_run_collision_scan():
     """Run collision prediction sweep over current TLE catalog."""
-    from app.database.session import SessionLocal
-    from app.services.collision_engine import collision_engine
+    from database.session import SessionLocal
+    from orbital.collision_engine import collision_engine
 
     db = SessionLocal()
     try:

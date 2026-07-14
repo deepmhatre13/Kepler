@@ -1,8 +1,8 @@
 from app.core.celery_app import celery_app
-from app.database.session import SessionLocal
-from app.services.spacetrack import spacetrack_service
-from app.services.weather_service import weather_service
-from app.services.collision_engine import collision_engine
+from database.session import SessionLocal
+from orbital.spacetrack import spacetrack_service
+from services.weather_service import weather_service
+from orbital.collision_engine import collision_engine
 import logging
 
 logger = logging.getLogger("app")

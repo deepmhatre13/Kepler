@@ -1,9 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 from app.main import app
-from app.services.orbit_engine import orbit_engine
-from app.services.collision_engine import collision_engine
-from app.services.risk_service import risk_analysis_service
+from orbital.orbit_engine import orbit_engine
+from orbital.collision_engine import collision_engine
+from services.risk_service import risk_analysis_service
 import datetime
 import numpy as np
 

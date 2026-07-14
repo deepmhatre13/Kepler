@@ -5,9 +5,9 @@ import logging
 from fastapi import FastAPI, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
-from app.api.router import api_router
-from app.websocket.manager import manager
-from app.models.db_models import Organization, Role
+from api.router import api_router
+from websocket.manager import manager
+from models.db_models import Organization, Role
 
 
 logging.basicConfig(level=logging.INFO)
@@ -79,7 +79,7 @@ async def on_startup():
     
     logger.info("Initializing MongoDB database schemas...")
     try:
-        from app.database.session import get_mongo_client, uri_db_name, SessionLocal
+        from database.session import get_mongo_client, uri_db_name, SessionLocal
         client = get_mongo_client()
         db_name = uri_db_name(settings.MONGODB_URI)
         mongo_db = client[db_name]
