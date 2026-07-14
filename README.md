@@ -1,6 +1,9 @@
-# 🚀 KEPLER
+<div align="center">
+<h1>🚀 KEPLER</h1>
 
-### AI-Powered Orbital Intelligence & Space Debris Collision Avoidance Platform
+### An AI-Powered Autonomous Space Traffic Management Platform
+</div>
+
 
 <p align="center">
   <img src="https://img.shields.io/badge/Space-Tech-blue?style=for-the-badge" />
@@ -35,290 +38,69 @@ The platform combines modern AI systems, orbital mechanics, data visualization, 
 
 ---
 
-# 🎯 Problem Statement
+## ✨ Features
 
-Earth orbit is becoming increasingly crowded.
-
-Current estimates indicate:
-
-* Tens of thousands of tracked objects
-* Hundreds of thousands of debris fragments
-* Thousands of active satellites
-* Constant conjunction events
-
-A single collision can:
-
-* Destroy operational satellites
-* Disrupt communication networks
-* Create massive debris clouds
-* Trigger cascading orbital failures
-* Cause multi-billion-dollar losses
-
-Current monitoring systems often suffer from:
-
-* Information overload
-* Manual analysis workflows
-* Limited predictive intelligence
-* Poor visualization capabilities
-* Lack of autonomous decision support
-
-Organizations need a platform capable of:
-
-* Monitoring orbital activity
-* Predicting risks early
-* Simulating future trajectories
-* Supporting operational decision-making
+* 🛰️ Live Satellite Tracking
+* ☄️ Space Debris Monitoring
+* ⚠️ AI-Based Collision Prediction
+* 📊 Orbital Risk Assessment
+* 🤖 Multi-Agent AI Decision System
+* 🌍 Digital Twin Earth Visualization
+* 🚀 Autonomous Collision Avoidance Recommendations
+* 🌞 Space Weather Monitoring
+* 📈 Interactive Dashboard & Analytics
+* 🔄 Real-time Orbital Data Processing
 
 ---
 
-# 💡 Solution
+## 🏗️ Tech Stack
 
-Kepler acts as an AI-assisted Orbital Operations Center.
-
-The platform continuously:
-
-1. Collects orbital data
-2. Processes satellite trajectories
-3. Tracks debris populations
-4. Detects potential conjunctions
-5. Calculates collision probabilities
-6. Simulates future orbital paths
-7. Generates risk assessments
-8. Produces maneuver recommendations
-9. Visualizes all activity in real time
-
----
-
-# ✨ Key Features
-
-## 🛰 Real-Time Satellite Tracking
-
-Track active satellites in Earth orbit.
-
-Features:
-
-* Satellite search
-* NORAD lookup
-* Orbit visualization
-* Live orbital propagation
-* Telemetry dashboard
-
----
-
-## ☄ Space Debris Monitoring
-
-Monitor orbital debris populations.
-
-Features:
-
-* Debris catalog visualization
-* Risk classification
-* Orbital clustering
-* Density analysis
-* Debris tracking
-
----
-
-## ⚠ Collision Prediction Engine
-
-Identify potential orbital conjunctions.
-
-Features:
-
-* Collision probability scoring
-* Miss distance calculations
-* Risk prioritization
-* Automated alert generation
-
----
-
-## 🤖 Autonomous Maneuver Recommendations
-
-AI-powered decision support system.
-
-Capabilities:
-
-* Risk analysis
-* Maneuver simulation
-* Alternative trajectory generation
-* Safety optimization
-
----
-
-## 🌎 Interactive 3D Earth Visualization
-
-Built using CesiumJS.
-
-Features:
-
-* High-fidelity Earth rendering
-* Satellite visualization
-* Debris visualization
-* Orbit paths
-* Camera controls
-* Threat overlays
-
----
-
-## 📊 Orbital Intelligence Dashboard
-
-Mission-control style interface.
-
-Displays:
-
-* Active satellites
-* Debris objects
-* Collision alerts
-* Space weather conditions
-* Orbital analytics
-* AI reasoning stream
-
----
-
-## 🧠 AI Decision Engine
-
-Uses machine learning and predictive analytics to:
-
-* Forecast conjunction events
-* Analyze orbital behavior
-* Prioritize threats
-* Generate recommendations
-
----
-
-## ☀ Space Weather Monitoring
-
-Monitor environmental conditions affecting satellites.
-
-Tracks:
-
-* Solar activity
-* Geomagnetic disturbances
-* Orbital environment conditions
-
----
-
-# 🏗 System Architecture
-
-```text
-                  ┌─────────────────┐
-                  │ Orbital Data    │
-                  │ Sources         │
-                  └────────┬────────┘
-                           │
-                           ▼
-               ┌───────────────────────┐
-               │ Data Processing Layer │
-               └───────────┬───────────┘
-                           │
-                           ▼
-               ┌───────────────────────┐
-               │ Collision Prediction  │
-               │ Engine                │
-               └───────────┬───────────┘
-                           │
-                           ▼
-               ┌───────────────────────┐
-               │ AI Decision Engine    │
-               └───────────┬───────────┘
-                           │
-                           ▼
-               ┌───────────────────────┐
-               │ REST APIs             │
-               └───────────┬───────────┘
-                           │
-                           ▼
-               ┌───────────────────────┐
-               │ React Frontend        │
-               └───────────┬───────────┘
-                           │
-                           ▼
-               ┌───────────────────────┐
-               │ Cesium Visualization  │
-               └───────────────────────┘
-```
-
----
-
-# 🛠 Tech Stack
-
-## Frontend
+### Frontend
 
 * React
 * TypeScript
-* Vite
 * Tailwind CSS
 * CesiumJS
-* React Query
-* Zustand
-* Framer Motion
+* Redux Toolkit
 
----
+### Backend
 
-## Backend
-
-* Python
 * FastAPI
-* Uvicorn
-* Pydantic
-* AsyncIO
-
----
-
-## Database
-
+* Python
 * MongoDB
-* Motor
-* MongoDB Atlas
+* Motor / PyMongo
 
----
+### AI & Data Processing
 
-## AI & Analytics
-
-* Scikit-Learn
-* XGBoost
-* TensorFlow
-* PyTorch
+* OpenAI API
+* LangGraph
 * NumPy
 * Pandas
+* Scikit-learn
 
----
+### Space Data Sources
 
-## Orbital Mechanics
+* Space-Track
+* CelesTrak
+* NASA DONKI
+* NOAA SWPC
 
-* Orekit
-* Skyfield
-* Poliastro
-* SGP4
-
----
-
-## Visualization
-
-* CesiumJS
-* Recharts
-* Three.js
-* D3.js
-
----
-
-## DevOps
+### DevOps
 
 * Docker
+* Docker Compose
 * GitHub Actions
-* Nginx
 
 ---
 
-# 📁 Project Structure
+# 📂 Project Structure
 
-```bash
-orbital-guardian/
+```text
+Kepler/
 │
 ├── frontend/
 │   ├── public/
 │   ├── src/
-│   │
 │   ├── components/
 │   ├── pages/
 │   ├── hooks/
@@ -330,7 +112,6 @@ orbital-guardian/
 │
 ├── backend/
 │   ├── app/
-│   │
 │   ├── api/
 │   ├── services/
 │   ├── ai/
@@ -342,13 +123,9 @@ orbital-guardian/
 │   └── utils/
 │
 ├── docs/
-│
 ├── datasets/
-│
 ├── scripts/
-│
 ├── docker/
-│
 ├── tests/
 │
 ├── .env
@@ -359,250 +136,324 @@ orbital-guardian/
 
 ---
 
-# 🔄 Data Flow
-
-```text
-Orbital Sources
-      │
-      ▼
-Data Ingestion
-      │
-      ▼
-Trajectory Processing
-      │
-      ▼
-Collision Detection
-      │
-      ▼
-Risk Assessment
-      │
-      ▼
-AI Recommendation Engine
-      │
-      ▼
-REST API Layer
-      │
-      ▼
-Frontend Dashboard
-      │
-      ▼
-Cesium Earth Visualization
-```
-
----
-
-# 🎮 Core Modules
-
-| Module               | Purpose                       |
-| -------------------- | ----------------------------- |
-| Satellite Tracking   | Monitor active satellites     |
-| Debris Monitoring    | Track orbital debris          |
-| Collision Engine     | Detect conjunction risks      |
-| Risk Scoring         | Prioritize threats            |
-| AI Recommendations   | Generate maneuver suggestions |
-| Space Weather        | Environmental monitoring      |
-| Visualization Engine | 3D orbital display            |
-| Analytics Dashboard  | Operational intelligence      |
-
----
-
 # 🚀 Getting Started
 
-## Clone Repository
+## 1. Fork the Repository
+
+Click the **Fork** button at the top-right of this repository.
+
+---
+
+## 2. Clone Your Fork
 
 ```bash
-git clone https://github.com/yourusername/orbital-guardian.git
-
-cd orbital-guardian
+git clone https://github.com/<your-username>/Kepler.git
 ```
 
 ---
 
-## Frontend Setup
+## 3. Navigate to the Project
 
 ```bash
-cd frontend
-
-npm install
-
-npm run dev
+cd Kepler
 ```
 
 ---
 
-## Backend Setup
+## 4. Add the Original Repository as Upstream
+
+```bash
+git remote add upstream https://github.com/7-Blocks/Kepler.git
+```
+
+Verify:
+
+```bash
+git remote -v
+```
+
+---
+
+## 5. Install Backend Dependencies
 
 ```bash
 cd backend
 
-pip install -r requirements.txt
+pip install -r ../requirements.txt
+```
+
+---
+
+## 6. Install Frontend Dependencies
+
+```bash
+cd ../frontend
+
+npm install
+```
+
+---
+
+## 7. Configure Environment Variables
+
+Create a `.env` file in the project root.
+
+Example:
+
+```env
+MONGODB_URI=your_mongodb_uri
+DATABASE_NAME=kepler
+
+SPACETRACK_USERNAME=your_username
+SPACETRACK_PASSWORD=your_password
+
+OPENAI_API_KEY=your_api_key
+```
+
+---
+
+## 8. Start MongoDB
+
+Run your local MongoDB instance or connect to MongoDB Atlas.
+
+---
+
+## 9. Run the Backend
+
+```bash
+cd backend
 
 uvicorn app.main:app --reload
 ```
 
+Backend:
+
+```
+http://localhost:8000
+```
+
+Swagger:
+
+```
+http://localhost:8000/docs
+```
+
 ---
 
-## MongoDB Setup
-
-Local MongoDB:
+## 10. Run the Frontend
 
 ```bash
-mongodb://localhost:27017
+cd frontend
+
+npm run dev
 ```
 
-or
+Frontend:
 
-MongoDB Atlas:
-
-```env
-MONGODB_URI=your_connection_string
+```
+http://localhost:5173
 ```
 
 ---
 
-# 📈 Scalability
+# 🧪 Running Tests
 
-Kepler is designed for large-scale orbital monitoring.
+Backend
 
-Future capabilities:
+```bash
+pytest
+```
 
-* Millions of tracked objects
-* Multi-region deployment
-* Real-time streaming
-* Distributed processing
-* Global satellite monitoring
+Frontend
 
----
-
-# 🌐 Potential Users
-
-### Government Agencies
-
-* NASA
-* ISRO
-* ESA
-* JAXA
-
-### Satellite Operators
-
-* Starlink
-* OneWeb
-* Planet Labs
-
-### Universities
-
-* Aerospace research
-* Orbital studies
-
-### Startups
-
-* Space situational awareness
-* Satellite analytics
-
-### Researchers
-
-* Orbital dynamics
-* Space debris analysis
-
----
-
-# 🔮 Future Roadmap
-
-### Phase 1
-
-* Satellite tracking
-* Debris visualization
-* Collision monitoring
-
-### Phase 2
-
-* Advanced conjunction analysis
-* Predictive AI models
-* Autonomous recommendations
-
-### Phase 3
-
-* Digital twin of Earth's orbital environment
-* Multi-agent mission planning
-* Orbital traffic management
-
-### Phase 4
-
-* Commercial deployment
-* Global orbital intelligence network
+```bash
+npm test
+```
 
 ---
 
 # 🤝 Contributing
 
-Contributions are welcome.
+We welcome contributions from developers of all experience levels. Whether you're fixing bugs, improving documentation, or adding new features, your contributions are appreciated.
 
-Areas of interest:
+## Step 1: Sync Your Fork
 
-* Aerospace Engineering
-* AI & Machine Learning
-* Orbital Mechanics
-* Data Visualization
-* Backend Development
-* Frontend Development
+Before starting new work, sync your fork with the latest changes.
 
----
+```bash
+git checkout main
 
-# 📜 License
+git fetch upstream
 
-This project is released under the MIT License.
+git merge upstream/main
+```
 
 ---
 
-# 🌌 Vision
+## Step 2: Create a New Branch
 
-**Building the future of autonomous orbital safety through AI-powered space intelligence.**
+Use a descriptive branch name.
 
-*"Protecting Earth’s orbital environment, one trajectory at a time."* 🚀🌍
+```bash
+git checkout -b feature/add-health-endpoint
+```
 
-## Automated Pull Request Labels
+Examples:
 
-This repository uses GitHub Actions to automate PR labeling, ensuring consistency for ECSoC26.
+```
+feature/add-authentication
+bugfix/fix-mongodb-sync
+docs/update-readme
+refactor/improve-api
+```
 
-- **Automatic labels**: Every PR is automatically tagged with ECSoC26, mentor:Krish-Khinchi, and pr-valid using the GITHUB_TOKEN.
-- **File-based labels**: The ctions/labeler automatically assigns labels based on which files were changed (e.g. 	ype:frontend, 	ype:documentation, website).
-- **Mentor labels**: Pre-assigned mentor labels (like mentor:Krish-Khinchi) help route PRs.
-- **Event labels**: The ECSoC26 label ensures PRs are tracked for the event.
-- **Status labels**: Labels like pr-valid, 
-eeds-review, and 
-eady-to-merge track the PR lifecycle.
+---
 
-## Automated Issue Labels
+## Step 3: Make Your Changes
 
-Issues are also automatically labeled using GitHub Actions when opened, edited, or reopened.
+Implement your feature or bug fix following the project's coding standards.
 
-- **Issue forms**: We use structured issue templates (e.g. Bug Report, Feature Request).
-- **Automatic labels**: The action automatically applies ECSoC26, mentor:Krish-Khinchi, and issue-valid.
-- **Type labels**: Labels (e.g., 	ype:bug) are automatically assigned via the Issue Template configurations.
-- **Priority, Platform, & Difficulty labels**: A custom GitHub Actions script parses dropdown selections from the issue body and assigns the corresponding labels.
+---
 
-## Creating Missing Labels
+## Step 4: Commit Your Changes
 
-If a label does not exist, the workflows are designed to fail gracefully without breaking the CI. You can create missing labels using:
+Write clear and meaningful commit messages.
 
-- **GitHub UI**: Navigate to Issues -> Labels and click "New label".
-- **GitHub CLI**: `gh label create "label-name" --description "desc" --color "colorhex"`
-- **labels.yml**: A comprehensive list is located at .github/labels.yml containing names, colors, and descriptions.
+```bash
+git add .
 
-## Customizing Labels
+git commit -m "feat: add satellite synchronization endpoint"
+```
 
-Maintainers can update the system easily:
+Examples:
 
-- **Change mentors**: Edit the workflows in .github/workflows/ and replace mentor:Krish-Khinchi with the new mentor.
-- **Rename labels**: Rename them in the GitHub UI, and update .github/workflows/ or Issue Templates.
-- **Add new labels**: Create them via the UI or CLI.
-- **Modify mappings**: Edit .github/labeler.yml for file paths or the regex parsing in .github/workflows/issue-labels.yml.
-- **Add new issue forms**: Create a new .yml file in .github/ISSUE_TEMPLATE/ following the existing format.
+```
+feat:
+fix:
+docs:
+refactor:
+test:
+style:
+```
 
-## Troubleshooting
+---
 
-- **Labels missing**: Ensure the label has been created in the repo. The action skips assigning labels that do not exist.
-- **Workflow permissions**: Ensure your GitHub Action settings have "Read and write permissions" for the GITHUB_TOKEN.
-- **Labeler not running**: Verify that .github/labeler.yml paths match your directory structure.
-- **Incorrect mappings**: Double-check regex mapping logic in issue-labels.yml if dropdown values have changed.
+## Step 5: Push Your Branch
 
+```bash
+git push origin feature/add-health-endpoint
+```
+
+---
+
+## Step 6: Open a Pull Request
+
+Go to your fork on GitHub and click **New Pull Request**.
+
+Please include:
+
+* A clear description of the changes
+* Screenshots (if UI changes)
+* Related issue number (if applicable)
+* Testing details
+
+---
+
+# 📋 Contribution Guidelines
+
+Please ensure that:
+
+* Your code follows the existing project structure.
+* Keep pull requests focused on one feature or fix.
+* Write clean and maintainable code.
+* Update documentation when necessary.
+* Add tests for new functionality whenever possible.
+* Run the project locally before submitting a PR.
+* Resolve merge conflicts before requesting a review.
+
+---
+
+# 🐞 Reporting Bugs
+
+When reporting a bug, please include:
+
+* Operating System
+* Browser (if frontend)
+* Python version
+* Node.js version
+* Steps to reproduce
+* Expected behavior
+* Actual behavior
+* Screenshots or logs (if available)
+
+---
+
+# 💡 Feature Requests
+
+We encourage new ideas.
+
+Before opening a feature request:
+
+* Check existing issues.
+* Clearly explain the problem.
+* Describe the proposed solution.
+* Explain the expected impact.
+
+---
+
+# 📜 Code Style
+
+### Python
+
+* Follow PEP 8
+* Use type hints
+* Write descriptive function names
+
+### JavaScript / TypeScript
+
+* Use ESLint formatting
+* Prefer functional components
+* Keep components modular
+
+---
+
+# 🛣️ Roadmap
+
+* Satellite synchronization
+* AI collision prediction improvements
+* Multi-agent planning
+* Digital Twin enhancements
+* Space weather analytics
+* Orbital maneuver optimization
+* Real-time alert system
+* Production deployment
+
+---
+
+# 🌟 Support the Project
+
+If you find Kepler useful:
+
+⭐ Star the repository
+
+🍴 Fork the project
+
+🐛 Report issues
+
+💡 Suggest new ideas
+
+🤝 Contribute code
+
+---
+
+# 📄 License
+
+This project is licensed under the **MIT License**.
+
+---
+
+## 👥 Maintainers
+
+Developed and maintained by **7-Blocks**.
+
+We appreciate every contribution that helps make Kepler a better open-source platform for autonomous space traffic management.
